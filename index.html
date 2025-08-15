@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ตำนานแห่งป่ามหัศจรรย์</title>
+<style>
+    body {
+        font-family: 'Prompt', sans-serif;
+        background-color: #1e1e2e;
+        color: #fff;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+    }
+    #game {
+        max-width: 600px;
+        margin: auto;
+        padding: 20px;
+    }
+    button {
+        background: #4cafef;
+        border: none;
+        padding: 10px 20px;
+        color: white;
+        margin: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #3b8fd9;
+    }
+    #image {
+        width: 100%;
+        max-height: 250px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    #hp-bar {
+        width: 100%;
+        background-color: #444;
+        border-radius: 5px;
+        margin: 10px 0;
+        height: 20px;
+    }
+    #hp {
+        height: 100%;
+        width: 100%;
+        background-color: #4caf50;
+        border-radius: 5px;
+        transition: width 0.5s;
+    }
+</style>
+</head>
+<body>
+<div id="game">
+    <h1>ตำนานแห่งป่ามหัศจรรย์</h1>
+    <div id="hp-bar"><div id="hp"></div></div>
+    <img id="image" src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600" alt="">
+    <p id="story">คุณตื่นขึ้นในป่ามืด มีเสียงกระซิบเรียกให้ไปช่วยคริสตัลแห่งแสง...</p>
+    <div id="choices">
+        <button onclick="startGame()">เริ่มเกม</button>
+    </div>
+</div>
+
+<audio id="bg-music" loop>
+    <source src="https://cdn.pixabay.com/download/audio/2023/06/09/audio_0b1cc58b07.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+let hp = 100;
+const storyElement = document.getElementById('story');
+const choicesElement = document.getElementById('choices');
+const imageElement = document.getElementById('image');
+const hpBar = document.getElementById('hp');
+const bgMusic = document.getElementById("bg-music");
+
+const scenes = {
+    start: {
+        text: "คุณตื่นขึ้นในป่ามืด มีเสียงกระซิบเรียกให้ไปช่วยคริสตัลแห่งแสง...",
+        img: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600",
+        choices: [
+            { text: "ไปทางแม่น้ำ", next: "river" },
+            { text: "ไปทางภูเขา", next: "mountain" }
+        ]
+    },
+    river: {
+        text: "คุณเดินเลียบแม่น้ำ เสียงคลื่นสงบ...แต่มีเงาดำเคลื่อนใต้น้ำ (HP -20)",
+        img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600",
+        damage: 20,
+        choices: [
+            { text: "ข้ามแม่น้ำ", next: "village" },
+            { text: "ย้อนกลับ", next: "mountain" }
+        ]
+    },
+    mountain: {
+        text: "คุณเดินขึ้นภูเขาสูง ลมแรงและหิมะตกหนัก (HP -15)",
+        img: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600",
+        damage: 15,
+        choices: [
+            { text: "หาที่พัก", next: "village" },
+            { text: "ฝ่าพายุไปต่อ", next: "shadow" }
+        ]
+    },
+    village: {
+        text: "คุณพบหมู่บ้านเล็กๆ ชาวบ้านขอให้ช่วยซ่อมสะพาน",
+        img: "https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?auto=format&fit=crop&w=600",
+        choices: [
+            { text: "ช่วยซ่อมสะพาน (HP +10)", heal: 10, next: "shadow" },
+            { text: "ปฏิเสธแล้วไปต่อ", next: "shadow" }
+        ]
+    },
+    shadow: {
+        text: "คุณเผชิญหน้ากับเงามืดสุดท้าย เลือกวิธีต่อสู้!",
+        img: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600",
+        choices: [
+            { text: "ใช้เวทย์แสง", next: "lightWin" },
+            { text: "ใช้ดาบโบราณ", next: "swordWin" }
+        ]
+    },
+    lightWin: {
+        text: "คุณปล่อยแสงสว่างจนเงามืดสลาย อาณาจักรรอดแล้ว! 🎉",
+        img: "https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=600",
+        choices: [
+            { text: "เล่นใหม่", next: "start", reset: true }
+        ]
+    },
+    swordWin: {
+        text: "คุณฟาดดาบโบราณและทำลายเงามืด อาณาจักรรอดแล้ว! ⚔️",
+        img: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600",
+        choices: [
+            { text: "เล่นใหม่", next: "start", reset: true }
+        ]
+    }
+};
+
+function startGame() {
+    // เล่นเพลงหลังมี interaction
+    bgMusic.play().catch(()=>{});
+    showScene("start");
+}
+
+function showScene(sceneName) {
+    const scene = scenes[sceneName];
+
+    // ปรับ HP
+    if(scene.damage) hp = Math.max(hp - scene.damage, 0);
+    if(scene.heal) hp = Math.min(hp + scene.heal, 100);
+    if(scene.choices.some(c => c.reset)) hp = 100;
+
+    // อัปเดตเนื้อเรื่องและภาพ
+    storyElement.textContent = scene.text;
+    imageElement.src = scene.img;
+    hpBar.style.width = hp + "%";
+
+    // ตรวจสอบ HP หมด
+    if(hp <= 0){
+        storyElement.textContent = "คุณหมดพลังและล้มลง... เกมจบแล้ว!";
+        choicesElement.innerHTML = "";
+        const restartBtn = document.createElement("button");
+        restartBtn.textContent = "เล่นใหม่";
+        restartBtn.onclick = () => showScene("start");
+        choicesElement.appendChild(restartBtn);
+        return;
+    }
+
+    // สร้างปุ่มตัวเลือก
+    choicesElement.innerHTML = "";
+    scene.choices.forEach(choice => {
+        const btn = document.createElement("button");
+        btn.textContent = choice.text;
+        btn.onclick = () => showScene(choice.next);
+        choicesElement.appendChild(btn);
+    });
+}
+</script>
+</body>
+</html>
